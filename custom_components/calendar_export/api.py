@@ -1,18 +1,20 @@
 """API for calendar export."""
 
-from http import HTTPStatus
 from datetime import datetime, timedelta
-import pytz
+from http import HTTPStatus
 
-from homeassistant.components.calendar import CalendarEntity, DOMAIN as CALENDAR_DOMAIN
+import pytz
+from aiohttp import web
+from homeassistant.components import http
+from homeassistant.components.calendar import DOMAIN as CALENDAR_DOMAIN
+from homeassistant.components.calendar import CalendarEntity
 from homeassistant.components.todo import (
-    TodoListEntity,
     DOMAIN as TODO_DOMAIN,
 )
-from homeassistant.components import http
-
+from homeassistant.components.todo import (
+    TodoListEntity,
+)
 from icalendar import Calendar, Event, Todo
-from aiohttp import web
 
 
 class CalendarExportAPI(http.HomeAssistantView):
@@ -22,7 +24,7 @@ class CalendarExportAPI(http.HomeAssistantView):
     name = "api:calendars:ics"
     requires_auth = False
 
-    async def get(self, request: web.Request, entity_id: str):
+    async def get(self, request: web.Request, entity_id: str):  # noqa: ANN201
         """Handle GET requests to export calendar in ICS format."""
         hass = request.app[http.KEY_HASS]
 
@@ -62,12 +64,11 @@ class CalendarExportAPI(http.HomeAssistantView):
         ics = cal.to_ical().decode("utf-8")
 
         # Return ICS data as response
-        response = web.Response(
+        return web.Response(
             status=HTTPStatus.OK,
             body=ics,
             headers={"Content-Type": "text/calendar"},
         )
-        return response
 
 
 class TodoListExportAPI(http.HomeAssistantView):
@@ -77,7 +78,7 @@ class TodoListExportAPI(http.HomeAssistantView):
     name = "api:todo:ics"
     requires_auth = False
 
-    async def get(self, request: web.Request, entity_id: str):
+    async def get(self, request: web.Request, entity_id: str):  # noqa: ANN201
         """Handle GET requests to export todo list in ICS format."""
         hass = request.app[http.KEY_HASS]
 
@@ -94,27 +95,27 @@ class TodoListExportAPI(http.HomeAssistantView):
 
         todos = entity.todo_items
 
-        for todo_item in todos:
-            t = Todo()
-            t.add("uid", todo_item.uid)
-            t.add("summary", todo_item.summary)
-            if todo_item.due:
-                t.add("due", todo_item.due)
-            if todo_item.description:
-                t.add("description", todo_item.description)
-            if todo_item.status:
-                t.add("status", todo_item.status.value)
-            todo.add_component(t)
+        if todos:
+            for todo_item in todos:
+                t = Todo()
+                t.add("uid", todo_item.uid)
+                t.add("summary", todo_item.summary)
+                if todo_item.due:
+                    t.add("due", todo_item.due)
+                if todo_item.description:
+                    t.add("description", todo_item.description)
+                if todo_item.status:
+                    t.add("status", todo_item.status.value)
+                todo.add_component(t)
 
         ics = todo.to_ical().decode("utf-8")
 
         # Return ICS data as response
-        response = web.Response(
+        return web.Response(
             status=HTTPStatus.OK,
             body=ics,
             headers={"Content-Type": "text/calendar"},
         )
-        return response
 
 
 class TodoListExportEventsAPI(http.HomeAssistantView):
@@ -124,7 +125,7 @@ class TodoListExportEventsAPI(http.HomeAssistantView):
     name = "api:todo:events_ics"
     requires_auth = False
 
-    async def get(self, request: web.Request, entity_id: str):
+    async def get(self, request: web.Request, entity_id: str):  # noqa: ANN201
         """Handle GET requests to export todo list in ICS format."""
         hass = request.app[http.KEY_HASS]
 
@@ -141,26 +142,26 @@ class TodoListExportEventsAPI(http.HomeAssistantView):
 
         todos = entity.todo_items
 
-        for todo_item in todos:
-            t = Event()
-            t.add("uid", todo_item.uid)
-            t.add("summary", todo_item.summary)
-            if todo_item.due:
-                t.add("dtstart", todo_item.due)
-            if todo_item.due:
-                t.add("dtend", todo_item.due)
-            if todo_item.description:
-                t.add("description", todo_item.description)
-            if todo_item.status:
-                t.add("status", todo_item.status.value)
-            todo.add_component(t)
+        if todos:
+            for todo_item in todos:
+                t = Event()
+                t.add("uid", todo_item.uid)
+                t.add("summary", todo_item.summary)
+                if todo_item.due:
+                    t.add("dtstart", todo_item.due)
+                if todo_item.due:
+                    t.add("dtend", todo_item.due)
+                if todo_item.description:
+                    t.add("description", todo_item.description)
+                if todo_item.status:
+                    t.add("status", todo_item.status.value)
+                todo.add_component(t)
 
         ics = todo.to_ical().decode("utf-8")
 
         # Return ICS data as response
-        response = web.Response(
+        return web.Response(
             status=HTTPStatus.OK,
             body=ics,
             headers={"Content-Type": "text/calendar"},
         )
-        return response
