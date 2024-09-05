@@ -115,3 +115,52 @@ class TodoListExportAPI(http.HomeAssistantView):
             headers={"Content-Type": "text/calendar"},
         )
         return response
+
+
+class TodoListExportEventsAPI(http.HomeAssistantView):
+    """View to export todo list in ICS format (using vevent not vtodo)."""
+
+    url = "/api/todo/{entity_id}/export_events.ics"
+    name = "api:todo:events_ics"
+    requires_auth = False
+
+    async def get(self, request: web.Request, entity_id: str):
+        """Handle GET requests to export todo list in ICS format."""
+        hass = request.app[http.KEY_HASS]
+
+        if not (entity := hass.data[TODO_DOMAIN].get_entity(entity_id)):
+            return web.Response(status=HTTPStatus.BAD_REQUEST)
+
+        if not isinstance(entity, TodoListEntity):
+            return web.Response(status=HTTPStatus.BAD_REQUEST)
+
+        # Generate ICS data
+        todo = Calendar()
+        todo["X-WR-CALNAME"] = entity.name
+        todo["PRODID"] = "-//Home Assistant//Todo List Export Events//EN"
+
+        todos = entity.todo_items
+
+        for todo_item in todos:
+            t = Event()
+            t.add("uid", todo_item.uid)
+            t.add("summary", todo_item.summary)
+            if todo_item.due:
+                t.add("dtstart", todo_item.due)
+            if todo_item.due:
+                t.add("dtend", todo_item.due)
+            if todo_item.description:
+                t.add("description", todo_item.description)
+            if todo_item.status:
+                t.add("status", todo_item.status.value)
+            todo.add_component(t)
+
+        ics = todo.to_ical().decode("utf-8")
+
+        # Return ICS data as response
+        response = web.Response(
+            status=HTTPStatus.OK,
+            body=ics,
+            headers={"Content-Type": "text/calendar"},
+        )
+        return response
