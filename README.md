@@ -12,6 +12,8 @@ The integration provides the `https://<your-domain>/api/calendars/{entity_id}/ex
 
 ## Installation
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=JosephAbbey&repository=ha_calendar_export&category=Integration)
+
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
 1. If you do not have a `custom_components` directory (folder) there, you need to create it.
 1. In the `custom_components` directory (folder) create a new folder called `calendar_export`.
