@@ -17,8 +17,23 @@ from homeassistant.components.todo import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import get_time_zone
-from icalendar import Calendar, Event, Todo
+from icalendar import Calendar, Event, Todo, vRecur
 
+
+def rrule_str_to_dict(rrule_str: str) -> dict:
+    """
+    Parse an RFC 5545 RRULE value string (as found in HA's
+    CalendarEvent.rrule, e.g. "FREQ=DAILY;INTERVAL=1;COUNT=10")
+    into a dict suitable for icalendar's Event.add('rrule', ...).
+
+    Strips an optional leading "RRULE:" prefix. Uses icalendar's own
+    vRecur parser so COUNT/INTERVAL become ints, UNTIL becomes a real
+    datetime/date, and multi-valued parts (BYDAY, BYMONTH, ...) become
+    lists -- rather than reimplementing RFC 5545 parsing by hand.
+    """
+    if rrule_str.upper().startswith("RRULE:"):
+        rrule_str = rrule_str.split(":", 1)[1]
+    return dict(vRecur.from_ical(rrule_str))
 
 def uid(*args: bytes | str) -> str:
     """Generate a stable hash from stable input data."""
@@ -75,6 +90,9 @@ class CalendarExportAPI(http.HomeAssistantView):
                 e.add("description", event.description)
             if event.location:
                 e.add("location", event.location)
+            # rrule logic added by Salvador Hernandez
+            if event.rrule:
+                e.add("rrule", rrule_str_to_dict(event.rrule))
             cal.add_component(e)
 
         ics = cal.to_ical().decode("utf-8")
